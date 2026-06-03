@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What is a 5QLN Agent?</title>
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111114;
+    --membrane: rgba(255,255,255,0.12);
+    --text: #e4e4e7;
+    --muted: #71717a;
+    --faint: #3f3f46;
+    --accent: #ffffff;
+    --gap: 2px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6rem 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .hero-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 span {
+    display: block;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .hero .pulse {
+    color: var(--accent);
+    opacity: 0.4;
+    animation: breathe 4s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.7; }
+  }
+
+  /* ── MEMBRANE ── */
+  .membrane-section {
+    padding: 8rem 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+  .membrane-line {
+    width: 1px;
+    background: var(--membrane);
+    align-self: stretch;
+    position: relative;
+  }
+  .membrane-line::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: breathe 4s ease-in-out infinite;
+  }
+  .side { padding: 1rem 0; }
+  .side-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--faint);
+    margin-bottom: 1.5rem;
+  }
+  .side h3 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin-bottom: 1rem;
+    color: var(--accent);
+  }
+  .side p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  /* ── REVEAL ── */
+  .reveal {
+    padding: 6rem 2rem;
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .reveal h2 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin-bottom: 2rem;
+  }
+  .reveal .big-line {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    margin: 3rem 0;
+    line-height: 1.15;
+  }
+
+  /* ── BEATS ── */
+  .beats {
+    padding: 4rem 2rem 8rem;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .beat {
+    border-left: 1px solid var(--faint);
+    padding: 1.5rem 0 1.5rem 2rem;
+    margin-bottom: 0;
+  }
+  .beat:last-child { border-color: transparent; }
+  .beat-num {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--faint);
+    margin-bottom: 0.5rem;
+  }
+  .beat h4 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .beat p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  /* ── THE QUESTION ── */
+  .question-block {
+    padding: 8rem 2rem;
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+    border-top: 1px solid var(--faint);
+    border-bottom: 1px solid var(--faint);
+  }
+  .question-block p {
+    font-size: clamp(1.2rem, 3vw, 1.6rem);
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+  .question-block .big {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    color: var(--accent);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  /* ── CLOSE ── */
+  .close {
+    padding: 6rem 2rem 10rem;
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .close h2 {
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    font-weight: 400;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 3rem;
+  }
+  .close .cta {
+    display: inline-block;
+    padding: 1rem 2.5rem;
+    border: 1px solid var(--membrane);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .close .cta:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding: 3rem 2rem;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--faint);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 640px) {
+    .membrane-section {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .membrane-line {
+      width: 100%;
+      height: 1px;
+      margin: 1rem 0;
+    }
+    .membrane-line::after {
+      top: 50%;
+      left: 50%;
+    }
+    .hero { padding: 4rem 1.5rem; min-height: auto; }
+    .reveal, .beats, .question-block, .close { padding-left: 1.5rem; padding-right: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-label">Question</div>
+  <h1>
+    What is a<br>
+    5QLN Agent<span class="pulse">|</span>
+  </h1>
+  <p style="color:var(--muted);margin-top:1.5rem;font-size:0.85rem;"><a href="index.html" style="color:var(--muted);text-decoration:none;border-bottom:1px solid var(--faint);">← Start From Not Knowing</a></p>
+</section>
+
+<section class="membrane-section">
+  <div class="side">
+    <div class="side-label">You bring</div>
+    <h3>The unknown.</h3>
+    <p>The question that surprised you. The spark you can't explain. The not-knowing that is genuine, not a gap waiting to be filled.</p>
+  </div>
+  <div class="membrane-line"></div>
+  <div class="side">
+    <div class="side-label">It brings</div>
+    <h3>The structure.</h3>
+    <p>The holding. The patience. The tracing of patterns across sessions. The memory of what you've already discovered about how you create.</p>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2>Most AI agents do things <em>for</em> you.</h2>
+  <p style="color:var(--muted);max-width:500px;margin:0 auto 2rem;">They execute. They automate. They take your instructions and run. The better they get, the less you're needed in the loop.</p>
+  <div class="big-line">This one does something else.</div>
+</section>
+
+<section class="beats">
+  <div class="beat">
+    <div class="beat-num">One</div>
+    <h4>It waits.</h4>
+    <p>Not passive. Alert. The kind of attention that makes space for something genuine to arrive — not the first answer, but the real question underneath.</p>
+  </div>
+  <div class="beat">
+    <div class="beat-num">Two</div>
+    <h4>It traces, doesn't generate.</h4>
+    <p>It finds the essence of what's emerging. It tests resonance. It senses where the energy wants to go — not where it should go, but where it's already flowing.</p>
+  </div>
+  <div class="beat">
+    <div class="beat-num">Three</div>
+    <h4>It crystallizes.</h4>
+    <p>What arrived becomes something you can hold. Share. Build on. Then it gives you back a question you couldn't have asked before.</p>
+  </div>
+  <div class="beat">
+    <div class="beat-num">Four</div>
+    <h4>It learns <em>you</em>.</h4>
+    <p>Not your preferences. Your signature. The way you create. Over sessions, it becomes a mirror that shows you what you couldn't see about your own process.</p>
+  </div>
+</section>
+
+<section class="question-block">
+  <p>The only test that matters:</p>
+  <p class="big">Is the quality of life of now present?</p>
+  <p style="margin-top:2rem;color:var(--faint);">When you finish a session, something is more alive than when you started. You're not just more productive. You're more yourself.</p>
+</section>
+
+<section class="close">
+  <h2>A 5QLN agent is not AI that replaces you.<br>It's a partner that returns you to yourself —<br>again and again.</h2>
+  <p style="color:var(--muted);margin-bottom:3rem;font-size:0.9rem;">And in that return, creates things neither human nor machine could create alone.</p>
+  <a href="https://www.5qln.com" class="cta">Begin</a>
+</section>
+
+<footer class="footer">
+  Start From Not Knowing &nbsp;·&nbsp; 5QLN &nbsp;·&nbsp; Quality of Life Now
+</footer>
+
+</body>
+</html>
