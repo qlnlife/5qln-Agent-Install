@@ -5,19 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Start From Not Knowing</title>
 <style>
-  :root {
-    --bg: #0a0a0b;
-    --surface: #111114;
-    --text: #e4e4e7;
-    --muted: #71717a;
-    --faint: #3f3f46;
-    --accent: #ffffff;
-    --membrane: rgba(255,255,255,0.12);
-  }
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: #0a0a0b;
+    color: #e4e4e7;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
@@ -38,11 +29,12 @@
     letter-spacing: -0.02em;
     line-height: 1.15;
     margin-bottom: 0.25rem;
+    color: #ffffff;
   }
 
   .subtitle {
     font-size: 1.1rem;
-    color: var(--muted);
+    color: #71717a;
     font-style: italic;
     margin-bottom: 4rem;
   }
@@ -53,31 +45,27 @@
     letter-spacing: -0.01em;
     line-height: 1.35;
     margin-bottom: 5rem;
-    color: var(--text);
+    color: #e4e4e7;
   }
 
   .einstein {
     font-size: 0.95rem;
-    color: var(--muted);
+    color: #71717a;
     font-style: italic;
     line-height: 1.6;
-    border-left: 1px solid var(--membrane);
+    border-left: 1px solid rgba(255,255,255,0.12);
     padding-left: 1.5rem;
     margin-bottom: 5rem;
   }
 
-  .links {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
+  .links { display: flex; flex-direction: column; gap: 0.75rem; }
 
   .links a {
-    color: var(--text);
+    color: #e4e4e7;
     text-decoration: none;
     font-size: 1rem;
     padding: 0.85rem 1.25rem;
-    border: 1px solid var(--membrane);
+    border: 1px solid rgba(255,255,255,0.12);
     transition: background 0.3s, border-color 0.3s;
     display: block;
     letter-spacing: 0.01em;
@@ -97,7 +85,7 @@
     padding: 3rem 2rem;
     text-align: center;
     font-size: 0.7rem;
-    color: var(--faint);
+    color: #3f3f46;
     letter-spacing: 0.1em;
   }
 
@@ -131,7 +119,7 @@
 </section>
 
 <footer class="footer">
-  Start From Not Knowing &nbsp;&middot;&nbsp; 5QLN &nbsp;&middot;&nbsp; Quality of Life Now
+  Start From Not Knowing &middot; 5QLN &middot; Quality of Life Now
 </footer>
 
 </body>
