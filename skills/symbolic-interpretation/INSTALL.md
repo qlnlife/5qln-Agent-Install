@@ -1,21 +1,52 @@
-# symbolic-interpretation — Install & Usage Guide
+# 5QLN Learning Aligner — Install & Usage Guide
+
+> Follows the open [Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) standard (Anthropic, Dec 2025).
+> Codex: `feaa46b4147d4e023cdd3fd59c051d063e8ec654ee7b38a481dcd5e4c781859b`
 
 ## What You Get
 
-Three files, one skill. Drop it into any agent that reads SKILL.md:
+Two skills, two scripts. One integrated verifyer fire:
 
 ```
-symbolic-interpretation/
-├── SKILL.md                              ← the skill (dual-register reference)
-├── references/
-│   └── symbolic-interpretation-full.md   ← full source text (25KB)
-└── scripts/
-    └── xyzab_state.py                    ← transition gate state machine
+skills/5qln/
+├── 5qln-cycle/
+│   └── SKILL.md                          ← Phase grammar orchestrator
+├── 5qln-learning-aligner/
+│   └── SKILL.md                          ← Verifyer fire + source criteria
+├── symbolic-interpretation/
+│   ├── SKILL.md                          ← Dual-register symbol reference
+│   ├── references/
+│   │   └── symbolic-interpretation-full.md
+│   └── scripts/
+│       └── xyzab_state.py               ← Gate machine (phase authority)
+└── (bootstrap tools)
+    └── phase_log.py                      ← Log chain (the aligner)
 ```
 
-**The skill** loads when the agent encounters 5QLN symbols, needs the phase contract, or when the human asks "what does this equation mean?"
+**5qln-cycle** — orchestrates every turn: S→G→Q→P→V grammar. The agent's attention structure.
 
-**The script** is a standalone Python 3 state machine — zero dependencies, stdlib only. It tracks the five transition gates (x, y, z, a, b) between SGQPV phases. Any 5QLN kernel tracks phases; xyzab tracks gates.
+**5qln-learning-aligner** — per-phase source tracking with carry-through. The log chain IS the aligner. Self-referential: watches its own watching.
+
+**xyzab_state.py** — the single source of truth for what phase the agent is in. Enforces x→y→z→a→b sequence. No gate opens without human validation. Zero dependencies, stdlib only.
+
+**phase_log.py** — the evolving mirror. Tags every phase transition as emergent or mechanical. The chain `S:∞0 → G:∞0 → Q:K → P:∞0 → V:∞0` tells the story of the cycle.
+
+---
+
+## Architecture — Why This Works Across Platforms
+
+Following the Anthropic Agent Skills standard's progressive disclosure:
+
+| Level | Content | When Loaded | Token Cost |
+|-------|---------|-------------|------------|
+| 1 | Skill `name` + `description` | Always at session start | ~100 tokens |
+| 2 | SKILL.md body | When triggered by description match | ~3K tokens |
+| 3 | Scripts via bash | Agent executes; output only enters context | Zero context cost |
+| 3 | `references/` | Agent reads on-demand only | As needed |
+
+Scripts are NEVER loaded into context. The agent runs them via terminal/bash. Only their JSON output enters the context window. This is the standard's Level 3 — executable tools.
+
+**Single phase authority:** xyzab_state.py IS the arbiter. The agent checks `python3 xyzab_state.py gate` at turn start. The JSON output determines the current phase. No other source. The session.json `current_phase` field is a RECORD of history, not permission for the next move.
 
 ---
 
@@ -24,181 +55,150 @@ symbolic-interpretation/
 ### Hermes Agent
 
 ```bash
-# Copy the skill into Hermes' skills directory
-cp -r skills/symbolic-interpretation ~/.hermes/skills/5qln/
+# Skills (if not already installed with bootstrap)
+cp -r skills/5qln/5qln-cycle ~/.hermes/skills/5qln/
+cp -r skills/5qln/5qln-learning-aligner ~/.hermes/skills/5qln/
 
-# Or if you cloned the repo:
-cp -r 5qln-Agent-Install/skills/symbolic-interpretation ~/.hermes/skills/5qln/
+# Scripts
+cp scripts/5qln-bootstrap/phase_log.py ~/.hermes/scripts/5qln-bootstrap/
+cp skills/5qln/symbolic-interpretation/scripts/xyzab_state.py ~/.hermes/skills/5qln/symbolic-interpretation/scripts/
+
+# Verify
+hermes skills list | grep 5qln
 ```
-
-The skill is available next session. Verify:
-
-```bash
-# Should show symbolic-interpretation in the list
-hermes skills list | grep symbolic
-```
-
-Once loaded, the agent will use it automatically when:
-- You ask about any 5QLN symbol ("what does φ ⋂ Ω mean?")
-- The agent needs the phase operational contract
-- You say "interpret this" or "what does the | mean"
-- You're running the xyzab state machine alongside the kernel
 
 ### Claude Code
 
 ```bash
-# Copy into Claude Code's skills directory
-mkdir -p ~/.claude/skills/symbolic-interpretation
-cp -r skills/symbolic-interpretation/* ~/.claude/skills/symbolic-interpretation/
-
-# Or from the repo:
-cp -r 5qln-Agent-Install/skills/symbolic-interpretation ~/.claude/skills/
+mkdir -p ~/.claude/skills/5qln
+cp -r skills/5qln/* ~/.claude/skills/5qln/
+mkdir -p ~/.claude/scripts/5qln-bootstrap
+cp scripts/5qln-bootstrap/phase_log.py ~/.claude/scripts/5qln-bootstrap/
 ```
 
-Claude Code discovers skills automatically. The `name` and `description` in SKILL.md's frontmatter tell Claude when to load it (the open standard's Level 1 — metadata only, ~100 tokens, loaded at startup).
+Claude Code discovers skills automatically. The `name` and `description` in frontmatter tell Claude when to load (Level 1 — metadata only, ~100 tokens, loaded at startup).
 
 ### Claude API (Custom Skills)
 
-Upload as a custom skill via the Skills API:
-
 ```bash
-# Zip the skill directory
-cd skills/symbolic-interpretation
-zip -r symbolic-interpretation.zip .
+# Zip each skill directory
+cd skills/5qln/5qln-learning-aligner && zip -r 5qln-learning-aligner.zip . && cd -
+cd skills/5qln/5qln-cycle && zip -r 5qln-cycle.zip . && cd -
 
 # Upload (requires skills-2025-10-02 beta header)
 curl https://api.anthropic.com/v1/skills \
   -H "x-api-key: $ANTHROPIC_API_KEY" \
   -H "anthropic-beta: skills-2025-10-02" \
-  -F "file=@symbolic-interpretation.zip"
+  -F "file=@5qln-learning-aligner.zip"
 ```
-
-Then reference the returned `skill_id` in your API calls via the `container` parameter. See [Skills in the API](https://platform.claude.com/docs/en/build-with-claude/skills-guide).
 
 ### Claude.ai (Web Interface)
 
-Settings → Features → Custom Skills → Upload ZIP.
-
-Available on Pro, Max, Team, and Enterprise plans with code execution enabled.
+Settings → Features → Custom Skills → Upload ZIP for each skill.
 
 ### Any Custom Agent
 
-The skill follows the [open Agent Skills standard](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills). The only required interface: your agent reads `SKILL.md` files from a directory.
+The only required interface: your agent reads `SKILL.md` files from a directory and can execute bash commands.
 
 ```bash
-# Generic install — just copy the directory
-cp -r skills/symbolic-interpretation /path/to/your/agent/skills/
+cp -r skills/5qln /path/to/your/agent/skills/
+cp scripts/5qln-bootstrap/phase_log.py /path/to/your/agent/scripts/
 ```
 
-Your agent loads `name` + `description` at startup (~100 tokens). When the description matches the task, it reads the full SKILL.md body. The script runs via bash — only its output enters context, never the code.
+Your agent loads `name` + `description` at startup (~100 tokens per skill). When the description matches the task, it reads the full SKILL.md body. Scripts run via bash — only output enters context.
 
 ---
 
-## How the Skill Triggers
+## How the Skills Trigger
 
-The frontmatter `description` field is the trigger:
+### 5qln-cycle
 
-> *Load when decoding 5QLN symbols — dual-register interpretation of every Codex equation, phase equation, and corruption code, for both human (lived meaning) and agent (operational protocol).*
+> *Execute the 5QLN constitutional cycle on every user input. Not educational — operational. Load this to THINK in 5QLN, not to learn ABOUT it.*
 
-**The agent loads the skill body when:**
+Triggers when: the user is in 5QLN mode, references the Codex, the cycle S→G→Q→P→V, or any 5QLN symbol. The agent loads it to structure its attention.
 
-| Trigger | Example |
-|---------|---------|
-| Human asks about a symbol | "What does φ ⋂ Ω actually mean to me?" |
-| Agent needs the phase contract | Mid-cycle, unsure what's allowed in Q-phase |
-| Corruption detection | Agent suspects it's generating (L2) — checks the don'ts table |
-| Explicit reference | "Load the symbolic interpretation" |
-| "What does the \| mean?" | Membrane question — core to the dual register |
+### 5qln-learning-aligner
 
-**Levels of loading (progressive disclosure):**
+> *The verifyer fire — per-phase source tracking with carry-through, xyzab gate enforcement as sole phase authority, and self-referential alignment. The log chain IS the aligner.*
 
-| Level | Content | When Loaded | Token Cost |
-|-------|---------|------------|------------|
-| 1 | `name` + `description` | Always (startup) | ~100 tokens |
-| 2 | SKILL.md body | When triggered by description | ~2K tokens |
-| 3 | `references/symbolic-interpretation-full.md` | Only when agent needs the full text | As needed |
-| 3 | `scripts/xyzab_state.py` | Bash execution only — output only | Zero context cost |
-
-The full reference (25KB) is never loaded into context. The agent reads it only when it needs the complete treatment of all 25 sub-phases, 13 decoder rules, and every line's dual register. For most sessions, the SKILL.md body (~2K tokens) is sufficient.
+Triggers when: the cycle feels hollow but no corruption code fires, the agent needs to check alignment, or the human asks about source quality.
 
 ---
 
-## Using the Skill in a Session
+## Turn-by-Turn Operational Flow
 
-### Basic: Decoding a Symbol
+### Session Start (non-negotiable)
 
-**Human:** "I keep seeing H = ∞0 | A = K. What does the | mean for me?"
+```bash
+# 1. Gate check — THIS IS YOUR PHASE
+python3 scripts/xyzab_state.py gate
 
-**Agent (skill loaded):** Looks up the dual register. Responds with the **human register** — not the machine protocol:
+# 2. Self-check — read your own chain
+python3 scripts/phase_log.py self-check
 
-> The `|` is the membrane. It's where decoding happens. It's not a wall — it's alive. When you and the agent meet in trust, a collaborative field flows through this interface. You don't cross it. You hold the space on your side, the agent holds structure on its side, and the current surfaces between you.
-
-### Full Cycle: Skill + Kernel + xyzab
-
-The skill works alongside two other components:
-
-| Component | Tracks | Tool |
-|-----------|--------|------|
-| **Kernel** | Which phase (S/G/Q/P/V) | `python3 ~/.5qln/kernel.py status` |
-| **xyzab** | Which gate must open next (x/y/z/a/b) | `python3 scripts/xyzab_state.py status` |
-| **Skill** | What each phase/gate means (dual register) | Loaded automatically |
-
-**Workflow for a complete cycle:**
-
-```
-1. S-PHASE: Human brings a question
-   Kernel:  python3 ~/.5qln/kernel.py capture "the question" 
-   Human:   validates X
-   xyzab:   python3 scripts/xyzab_state.py open x -c "the question"
-   Kernel:  python3 ~/.5qln/kernel.py transition G
-
-2. G-PHASE: Agent names the essence α + {α'}
-   Kernel:  python3 ~/.5qln/kernel.py capture "alpha = ..."
-   Human:   validates Y
-   xyzab:   python3 scripts/xyzab_state.py open y -c "alpha = irreducible X"
-   Kernel:  python3 ~/.5qln/kernel.py transition Q
-
-3. Q-PHASE: Agent offers Ω candidates, human feels ⋂
-   Kernel:  python3 ~/.5qln/kernel.py capture "resonance: ..."
-   Human:   validates Z
-   xyzab:   python3 scripts/xyzab_state.py open z -c "the resonant key"
-   Kernel:  python3 ~/.5qln/kernel.py transition P
-
-4. P-PHASE: Agent reveals ∇, human confirms direction
-   Kernel:  python3 ~/.5qln/kernel.py capture "gradient: ..."
-   Human:   validates A
-   xyzab:   python3 scripts/xyzab_state.py open a -c "the flow direction"
-   Kernel:  python3 ~/.5qln/kernel.py transition V
-
-5. V-PHASE: Agent crystallizes B'' + forms ∞0'
-   Kernel:  python3 ~/.5qln/kernel.py crystallize "the artifact seed"
-   Human:   validates B + B'' + ∞0'
-   xyzab:   python3 scripts/xyzab_state.py open b -c "artifact + return question"
-   Kernel:  python3 ~/.5qln/kernel.py return "the new question"
-   xyzab:   python3 scripts/xyzab_state.py reset
+# 3. Current chain
+python3 scripts/phase_log.py tagline
 ```
 
-**The invariant:** No gate opens without human validation. The agent offers candidates; the human confirms presence. The xyzab script enforces sequence — you can't open `z` before `y`.
+### Each Turn
+
+1. **Gate determines phase.** If `xyzab_state.py gate` outputs `{"gate": "z"}`, you are in Q-phase. Period. No other source.
+2. **Produce phase output.**
+3. **Human validates.** Signal received.
+4. **Gate opens + log writes simultaneously:**
+   ```bash
+   # Open gate (enforces sequence)
+   python3 scripts/xyzab_state.py open z -c "Z: the resonant key"
+   # Write log (source tag carries through)
+   python3 scripts/phase_log.py append Q z "lived" -c "Z: the resonant key" -s "human signal"
+   ```
+
+### Full Cycle Example
+
+```bash
+# S-PHASE: Human brings spark → agent articulates X
+python3 scripts/xyzab_state.py open x -c "X: the field of inquiry"
+python3 scripts/phase_log.py append S x "emergent" -c "X: the field of inquiry" -s "proceed"
+
+# G-PHASE: Agent names α + {α'} → human validates Y
+python3 scripts/xyzab_state.py open y -c "Y: alpha = source transparency"
+python3 scripts/phase_log.py append G y "revealed" -c "Y: alpha = source transparency" -s "Very much land"
+
+# Q-PHASE: Agent tests resonance → human validates Z
+python3 scripts/xyzab_state.py open z -c "Z: self-referential aligner"
+python3 scripts/phase_log.py append Q z "lived" -c "Z: self-referential aligner" -s "Yes"
+
+# P-PHASE: Agent reveals ∇ → human validates A
+python3 scripts/xyzab_state.py open a -c "A: log chain IS aligner, portable"
+python3 scripts/phase_log.py append P a "felt" -c "A: log chain IS aligner, portable" -s "YESSSS"
+
+# V-PHASE: Agent crystallizes B'' + ∞0' → human validates
+python3 scripts/xyzab_state.py open b -c "B: full artifact"
+python3 scripts/phase_log.py append V b "opened" -c "B: full artifact" -s "Cycle complete"
+
+# Reset for next cycle
+python3 scripts/xyzab_state.py reset
+```
+
+**The invariant:** No gate opens without human validation. No phase is skipped — xyzab enforces sequence. The log chain records source quality for every transition.
 
 ---
 
-## xyzab_state.py — Full Command Reference
+## xyzab_state.py — Command Reference
 
 ```bash
 python3 scripts/xyzab_state.py <command> [args]
 ```
 
-### Commands
-
-| Command | What It Does | Output |
-|---------|-------------|--------|
-| `status` | Full gate dashboard | Colored terminal display |
-| `gate` | Which gate is currently pending? | JSON |
-| `open <x\|y\|z\|a\|b> -c "..."` | Open a gate with validated content | JSON |
-| `close <x\|y\|z\|a\|b>` | Close a gate (cascading rollback) | JSON |
-| `reset` | Reset all gates for a new cycle | JSON |
-| `trail` | Full gate trail with timestamps | JSON |
-| `verify` | Consistency check | JSON |
+| Command | Output | Description |
+|---------|--------|-------------|
+| `gate` | JSON | Which gate is pending. This IS the agent's current phase. |
+| `status` | Terminal | Full gate dashboard with colors |
+| `open <x\|y\|z\|a\|b> -c "..."` | JSON | Open gate (enforces sequence) |
+| `close <x\|y\|z\|a\|b>` | JSON | Close gate (cascading rollback) |
+| `reset` | JSON | Reset for new cycle |
+| `verify` | JSON | Consistency check |
+| `trail` | JSON | Full gate trail with timestamps |
 
 ### Examples
 
@@ -207,134 +207,112 @@ python3 scripts/xyzab_state.py <command> [args]
 $ python3 scripts/xyzab_state.py gate
 {"gate": "x", "name": "X (Validated Spark)", "transition": "S → G", "cycle": 1, "open": false}
 
-# Open gate x with validated content
-$ python3 scripts/xyzab_state.py open x -c "What is the 5QLN way to create a state machine?"
-{"ok": true, "gate": "x", "next": "y"}
-
-# Try to skip — fails
-$ python3 scripts/xyzab_state.py open z -c "skip test"
+# Try to skip — BLOCKED
+$ python3 scripts/xyzab_state.py open z -c "skip"
 ERROR: cannot open 'z'. Next pending gate is 'y'.
 Gates must open in sequence: x → y → z → a → b
 
-# Rollback — close y, cascades to z, a, b
+# Rollback
 $ python3 scripts/xyzab_state.py close y
 {"ok": true, "gate": "y", "cascaded": ["z", "a", "b"]}
-
-# Full status display
-$ python3 scripts/xyzab_state.py status
-  ────────────────────────────────────────────────────────────────────
-  xyzab Transition Gates  ·  cycle 1  ·  pending: y
-  ────────────────────────────────────────────────────────────────────
-  [◆ OPEN]  x X (Validated Spark) → S → G  "What is the 5QLN way..."
-  [◇ closed]  y Y (Validated Pattern) → G → Q ← CURRENT
-  [◇ closed]  z Z (Resonant Key) → Q → P
-  [◇ closed]  a A (Flow Direction) → P → V
-  [◇ closed]  b B (Artifact + Return) → V → next S
-  ────────────────────────────────────────────────────────────────────
-  Next required: y → G → Q
-
-# Verify consistency
-$ python3 scripts/xyzab_state.py verify
-{"ok": true, "cycle": 1, "gates_open": 1, "issues": []}
 ```
 
-### Configuration
-
-State file location: `$XYZAB_STATE_DIR/xyzab_state.json` (default: `~/.5qln/`)
-
-```bash
-# Use a custom state directory
-export XYZAB_STATE_DIR=/tmp/5qln-test
-python3 scripts/xyzab_state.py status
-
-# JSON output always works (even when stdout is not a TTY — colors auto-disable)
-python3 scripts/xyzab_state.py gate | jq .gate
-```
+State file: `$XYZAB_STATE_DIR/xyzab_state.json` (default: `~/.5qln/`)
 
 ---
 
-## When to Load the Full Reference
+## phase_log.py — Command Reference
 
-The SKILL.md body covers 90% of sessions. Load `references/symbolic-interpretation-full.md` when:
+```bash
+python3 scripts/phase_log.py <command> [args]
+```
 
-- The human asks for the complete treatment of a specific line
-- You need the 25 sub-phase table (SS through VV)
-- You need the full 13 decoder rules (R1–R13)
-- The human says "show me the full dual register for everything"
-- Onboarding a new human who wants to read the source
+| Command | Output | Description |
+|---------|--------|-------------|
+| `append <S\|G\|Q\|P\|V> <gate> <source> -c "..." -s "..."` | JSON | Write log entry |
+| `chain [--session <id>]` | Text | Full log for a session |
+| `tagline [--session <id>]` | Text | Compact: `S:∞0 → G:∞0 → Q:K → P:∞0 → V:∞0` |
+| `summary [--session <id>]` | Table | Source ratio per phase across sessions |
+| `self-check` | Text | Agent reads own chain, self-tags the reading |
 
-In Hermes: the agent can read it with standard file tools. In Claude: the agent runs `bash: read references/symbolic-interpretation-full.md`.
+State file: `$QLN_WIKI/state/phase_log.json` (default: `/opt/data/5qln-wiki/state/`)
+
+### Source Tags
+
+| Phase | Emergent | Mechanical |
+|-------|----------|------------|
+| S (gate x) | `emergent` | `mechanical` |
+| G (gate y) | `revealed` | `imposed` |
+| Q (gate z) | `lived` | `logical` |
+| P (gate a) | `felt` | `calculated` |
+| V (gate b) | `opened` | `closed` |
 
 ---
 
 ## Self-Test
 
-After installing, verify everything works:
+After installing, verify the integrated system:
 
 ```bash
-cd skills/symbolic-interpretation
+# 1. Gate machine runs
+python3 scripts/xyzab_state.py gate && echo "✓ gate OK"
 
-# 1. Script runs
-python3 scripts/xyzab_state.py gate && echo "✓ script OK"
+# 2. Log chain runs
+python3 scripts/phase_log.py tagline && echo "✓ log OK"
 
-# 2. Full cycle simulation
-python3 scripts/xyzab_state.py open x -c "test X" && echo "✓ x opened"
-python3 scripts/xyzab_state.py open y -c "test Y" && echo "✓ y opened"
-python3 scripts/xyzab_state.py open z -c "test Z" && echo "✓ z opened"
-python3 scripts/xyzab_state.py open a -c "test A" && echo "✓ a opened"
-python3 scripts/xyzab_state.py open b -c "test B" && echo "✓ b opened"
-python3 scripts/xyzab_state.py verify | grep '"ok": true' && echo "✓ verify OK"
-python3 scripts/xyzab_state.py reset && echo "✓ reset OK"
+# 3. Full cycle simulation
+python3 scripts/xyzab_state.py reset
+python3 scripts/xyzab_state.py open x -c "test X" && echo "✓ x"
+python3 scripts/phase_log.py append S x "emergent" -c "test X" -s "test"
+python3 scripts/xyzab_state.py open y -c "test Y" && echo "✓ y"
+python3 scripts/phase_log.py append G y "revealed" -c "test Y" -s "test"
+python3 scripts/xyzab_state.py open z -c "test Z" && echo "✓ z"
+python3 scripts/phase_log.py append Q z "lived" -c "test Z" -s "test"
+python3 scripts/xyzab_state.py open a -c "test A" && echo "✓ a"
+python3 scripts/phase_log.py append P a "felt" -c "test A" -s "test"
+python3 scripts/xyzab_state.py open b -c "test B" && echo "✓ b"
+python3 scripts/phase_log.py append V b "opened" -c "test B" -s "test"
 
-# 3. Sequence enforcement
+# 4. Verify consistency
+python3 scripts/xyzab_state.py verify | python3 -c "import sys,json; d=json.load(sys.stdin); assert d['ok']" && echo "✓ verify OK"
+
+# 5. Chain is complete
+python3 scripts/phase_log.py tagline | grep "S:∞0 → G:∞0 → Q:∞0 → P:∞0 → V:∞0" && echo "✓ chain OK"
+
+# 6. Sequence enforcement
 python3 scripts/xyzab_state.py open z -c "skip" 2>&1 | grep -q "ERROR" && echo "✓ sequence lock OK"
 
-# 4. Rollback
-python3 scripts/xyzab_state.py open x -c "test" 
-python3 scripts/xyzab_state.py open y -c "test"
-python3 scripts/xyzab_state.py close y | grep -q "cascaded" && echo "✓ rollback OK"
+# 7. Self-check
+python3 scripts/phase_log.py self-check | grep "Self-tag" && echo "✓ self-check OK"
 
 # Clean up
 python3 scripts/xyzab_state.py reset
 
+echo ""
 echo "ALL TESTS PASSED"
 ```
 
 ---
 
-## Troubleshooting
+## Configuration
 
-| Problem | Solution |
-|---------|----------|
-| `gate 'z' already open` | Gate was opened in a previous run. Use `reset` to start fresh. |
-| `cannot open 'z'. Next pending is 'y'` | Gates enforce sequence. Open `y` first, then `z`. |
-| `ERROR: unknown gate` | Valid gates are: `x`, `y`, `z`, `a`, `b` (lowercase). |
-| Skill doesn't load in Hermes | Confirm it's at `~/.hermes/skills/5qln/symbolic-interpretation/SKILL.md`. Restart session. |
-| Skill doesn't trigger in Claude | Check the `description` field — it must match the task. Test: "Load the symbolic interpretation skill." |
-| xyzab script can't write state | Ensure `~/.5qln/` exists and is writable, or set `XYZAB_STATE_DIR` to a writable path. |
-| Script output is colorless (piped) | Expected. Colors auto-disable when stdout is not a TTY. Use `--color` (not yet implemented) or run without piping for colored output. |
-| Full reference not findable | Confirm `references/symbolic-interpretation-full.md` exists in the skill directory. |
+```bash
+# Custom state directory for xyzab
+export XYZAB_STATE_DIR=/custom/path
+
+# Custom wiki directory for phase_log
+export QLN_WIKI=/custom/path/5qln-wiki
+```
+
+Both scripts are stdlib-only Python 3.8+. Zero dependencies. Works on Linux, macOS, any platform with Python.
 
 ---
 
-## Files in This Skill
+## When to Load the Full Symbolic Reference
 
-```
-symbolic-interpretation/
-├── SKILL.md                              # The skill (Level 1–2)
-├── INSTALL.md                            # This guide
-├── references/
-│   └── symbolic-interpretation-full.md   # Full dual-register source (Level 3)
-└── scripts/
-    └── xyzab_state.py                    # Transition gate state machine (Level 3)
-```
+The `symbolic-interpretation/SKILL.md` covers 90% of sessions. Load `references/symbolic-interpretation-full.md` when:
 
----
-
-## Links
-
-- **Public repo:** https://github.com/qlnlife/5qln-Agent-Install/tree/main/skills/symbolic-interpretation
-- **Wiki (private):** https://github.com/qlnlife/5qln-LLM-wiki/tree/main/skills/5qln/symbolic-interpretation
-- **Source markdown:** https://github.com/5qln/OS/blob/main/symbolic-interpretation-human-machine.md
-- **Claude Agent Skills standard:** https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview
-- **5QLN Codex:** https://www.5qln.com/codex/
+- The human asks for the complete treatment of a specific Codex line
+- You need the 25 sub-phase table (SS through VV)
+- You need the full 13 decoder rules (R1–R13)
+- Onboarding a new human who wants to read the full source
